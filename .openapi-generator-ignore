@@ -9,6 +9,7 @@
 .flake8
 README.md
 setup.cfg
+requirements.txt
 pyproject.toml
 
 indicate_data_exchange_server/security_api.py
