@@ -10,8 +10,10 @@ from indicate_data_exchange_server.config.configuration import DatabaseConfigura
 from indicate_data_exchange_server.db.model import AggregatedResult
 from indicate_data_exchange_server.models.attributed_quality_indicator_result import AttributedQualityIndicatorResult
 from indicate_data_exchange_server.models.provider_results_post_request import ProviderResultsPostRequest
+from indicate_data_exchange_server.models.indicator_info import IndicatorInfo
 from indicate_data_exchange_server.models.aggregation_period_kind import AggregationPeriodKind
 import indicate_data_exchange_server.db.model
+
 
 
 @contextmanager
@@ -22,6 +24,16 @@ def transaction(configuration: DatabaseConfiguration):
     with Session(engine) as session:
         yield session
         session.commit()
+
+def read_indicator_info(session):
+    return [
+        IndicatorInfo(
+            concept_id=indicator_info.concept_id,
+            title=indicator_info.title,
+            description=indicator_info.description,
+        )
+        for indicator_info in session.scalars(select(indicate_data_exchange_server.db.model.IndicatorInfo))
+    ]
 
 def write_results(session, provider_results: ProviderResultsPostRequest):
     provider_id = provider_results.provider_id

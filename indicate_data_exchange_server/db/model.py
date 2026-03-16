@@ -8,6 +8,15 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 class Base(DeclarativeBase):
     pass
 
+class IndicatorInfo(Base):
+    __tablename__ = "indicator_info"
+
+    concept_id: Mapped[int] = mapped_column(primary_key=True)
+
+    title: Mapped[str] = mapped_column(VARCHAR)
+
+    description: Mapped[str] = mapped_column(VARCHAR)
+
 class AggregationKind(enum.Enum):
     daily   = "daily"
     weekly  = "weekly"

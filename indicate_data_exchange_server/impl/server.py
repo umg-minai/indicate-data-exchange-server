@@ -10,6 +10,7 @@ from indicate_data_exchange_server.config.configuration import load_configuratio
 from indicate_data_exchange_server.models.aggregation_period_kind import AggregationPeriodKind
 from indicate_data_exchange_server.models.attributed_quality_indicator_result import AttributedQualityIndicatorResult
 from indicate_data_exchange_server.models.provider_results_post_request import ProviderResultsPostRequest
+from indicate_data_exchange_server.models.indicator_info import IndicatorInfo
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -17,6 +18,11 @@ configuration = load_configuration()
 
 class Server(BaseDefaultApi):
 
+    async def indicator_info_get(
+        self,
+    ) -> List[IndicatorInfo]:
+        with database.transaction(configuration.database) as session:
+            return database.read_indicator_info(session)
 
     async def provider_results_post(
         self,
