@@ -7,8 +7,6 @@ WORKDIR /app
 
 RUN pip install --root-user-action=ignore -r requirements.txt
 
-COPY --chmod=760 run-server.sh /app/
-
 ARG DATABASE_HOST
 ARG DATABASE_POST
 ARG DATABASE_NAME
@@ -21,4 +19,5 @@ ENV LISTEN_PORT=8080
 
 EXPOSE ${LISTEN_PORT}
 
-CMD [ "/app/run-server.sh" ]
+CMD [ "sh", "-c", \
+      "exec uvicorn indicate_data_exchange_server.main:app --host ${LISTEN_ADDRESS} --port ${LISTEN_PORT}" ]
