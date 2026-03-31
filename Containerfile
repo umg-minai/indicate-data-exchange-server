@@ -1,5 +1,11 @@
 FROM python:3.13-slim-trixie
 
+# For health check
+RUN DEBIAN_FRONTEND=noninteractive apt-get update                  \
+    && DEBIAN_FRONTEND=noninteractive apt-get install --assume-yes \
+         curl                                                      \
+    && apt-get clean
+
 COPY requirements.txt              /app/
 COPY indicate_data_exchange_server /app/indicate_data_exchange_server/
 
@@ -21,3 +27,6 @@ EXPOSE ${LISTEN_PORT}
 
 CMD [ "sh", "-c", \
       "exec uvicorn indicate_data_exchange_server.main:app --host ${LISTEN_ADDRESS} --port ${LISTEN_PORT}" ]
+
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:${LISTEN_PORT}/indicator-info
