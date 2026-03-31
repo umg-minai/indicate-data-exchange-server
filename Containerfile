@@ -8,7 +8,7 @@ WORKDIR /app
 RUN pip install --root-user-action=ignore -r requirements.txt
 
 ARG DATABASE_HOST
-ARG DATABASE_POST
+ARG DATABASE_PORT
 ARG DATABASE_NAME
 ARG DATABASE_USER
 # Password should be provided via a secret as /run/secrets/database-password
