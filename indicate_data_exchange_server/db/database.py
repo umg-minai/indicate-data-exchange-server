@@ -18,7 +18,14 @@ import indicate_data_exchange_server.db.model
 
 @contextmanager
 def transaction(configuration: DatabaseConfiguration):
-    database_url = f'postgresql://{configuration.user}:{configuration.password}@{configuration.host}:{configuration.port}/{configuration.database}'
+    database_url = sqlalchemy.engine.url.URL.create(
+        drivername="postgresql",
+        username=configuration.user,
+        password=configuration.password,
+        host=configuration.host,
+        port=configuration.port,
+        database=configuration.database,
+    )
     connect_args = {"options": f"-csearch_path={configuration.dbschema}"}
     engine = sqlalchemy.create_engine(database_url, connect_args=connect_args)
     with Session(engine) as session:
