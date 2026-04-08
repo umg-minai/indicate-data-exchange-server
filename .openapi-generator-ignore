@@ -12,6 +12,7 @@ setup.cfg
 requirements.txt
 pyproject.toml
 
+indicate_data_exchange_server/main.py
 indicate_data_exchange_server/security_api.py
 tests/**
 
