@@ -1,3 +1,4 @@
+import logging
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from typing import List
@@ -6,14 +7,15 @@ import sqlalchemy.engine.create
 from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
 
+import indicate_data_exchange_server.db.model
 from indicate_data_exchange_server.config.configuration import DatabaseConfiguration
 from indicate_data_exchange_server.db.model import AggregatedResult
-from indicate_data_exchange_server.models.attributed_quality_indicator_result import AttributedQualityIndicatorResult
-from indicate_data_exchange_server.models.provider_results_post_request import ProviderResultsPostRequest
-from indicate_data_exchange_server.models.indicator_info import IndicatorInfo
 from indicate_data_exchange_server.models.aggregation_period_kind import AggregationPeriodKind
-import indicate_data_exchange_server.db.model
+from indicate_data_exchange_server.models.attributed_quality_indicator_result import AttributedQualityIndicatorResult
+from indicate_data_exchange_server.models.indicator_info import IndicatorInfo
+from indicate_data_exchange_server.models.provider_results_post_request import ProviderResultsPostRequest
 
+logger = logging.getLogger("database")
 
 
 @contextmanager
@@ -63,7 +65,8 @@ def write_results(session, provider_results: ProviderResultsPostRequest):
 def read_results(session,
                  aggregation_kind,
                  period_start: None | datetime = None,
-                 period_end: None | datetime = None) \
+                 period_end: None | datetime = None,
+                 data_provider_count_threshold: None | int = None) \
         -> List[AttributedQualityIndicatorResult]:
     statement = (select(AggregatedResult)
                  .where(AggregatedResult.aggregation_kind == aggregation_kind))
@@ -77,15 +80,32 @@ def read_results(session,
         elif aggregation_kind == AggregationPeriodKind.YEARLY:
             period_duration = timedelta(days=365)
         statement = statement.where(AggregatedResult.period_start <= period_end - period_duration)
-    return [
-        AttributedQualityIndicatorResult(
-            provider_id=aggregated_result.provider_id,
-            aggregation_period_start=aggregated_result.period_start,
-            indicator_id=aggregated_result.indicator_concept_id,
-            average_value=aggregated_result.average_value,
-            observation_count=aggregated_result.observation_count
-        )
-        for aggregated_result in session.scalars(statement)
-    ]
-
-
+    # Group aggregated results by the start of the aggregation period.
+    by_indicator_and_period_start = {}
+    for aggregated_result in session.scalars(statement):
+        key = (aggregated_result.indicator_concept_id, aggregated_result.period_start)
+        period_results = by_indicator_and_period_start.get(key, None)
+        if period_results is None:
+            period_results = []
+            by_indicator_and_period_start[key] = period_results
+        period_results.append(aggregated_result)
+    # Collect results that should be returned by skipping period with data from too few providers.
+    usable_results = []
+    skip_count = 0
+    for period_results in by_indicator_and_period_start.values():
+        if data_provider_count_threshold is None or len(period_results) >= data_provider_count_threshold:
+            for period_result in period_results:
+                usable_results.append(
+                    AttributedQualityIndicatorResult(
+                        provider_id=period_result.provider_id,
+                        aggregation_period_start=period_result.period_start,
+                        indicator_id=period_result.indicator_concept_id,
+                        average_value=period_result.average_value,
+                        observation_count=period_result.observation_count
+                    )
+                )
+        else:
+            skip_count += 1
+    if skip_count > 0:
+        logger.info(f"For {aggregation_kind.name} aggregation, skipped {skip_count} periods with data from fewer than {data_provider_count_threshold} data providers")
+    return usable_results

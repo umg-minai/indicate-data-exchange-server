@@ -54,4 +54,8 @@ class Server(BaseDefaultApi):
         period_end: None | datetime
     ) -> List[AttributedQualityIndicatorResult]:
         with database.transaction(configuration.database) as session:
-            return database.read_results(session, aggregation_kind, period_start, period_end)
+            return database.read_results(session,
+                                         aggregation_kind=aggregation_kind,
+                                         period_start=period_start,
+                                         period_end=period_end,
+                                         data_provider_count_threshold=configuration.data_provider_count_threshold)

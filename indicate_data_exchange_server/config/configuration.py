@@ -15,6 +15,11 @@ class DatabaseConfiguration(BaseModel):
 class Configuration(BaseModel):
     database: DatabaseConfiguration
 
+    data_provider_count_threshold: Optional[int] = Field(None,
+                                                         description="""Minimum number of data provider which must \
+                                                         have contributed data to a result period in order for that \
+                                                         period to be transmitted to clients.""")
+
 def load_configuration(config_file: str = ".env") -> Configuration:
     """
     Loads the configuration from a file or environment variables.
@@ -50,5 +55,7 @@ def load_configuration(config_file: str = ".env") -> Configuration:
     maybe_from_env(("database", "user"), "DATABASE_USER")
     maybe_from_env(("database", "password"), "DATABASE_PASSWORD")
     maybe_from_env(("database", "dbschema"), "DATABASE_SCHEMA")
+
+    maybe_from_env("data_provider_count_threshold", "DATA_PROVIDER_COUNT_THRESHOLD")
 
     return Configuration(**args)
