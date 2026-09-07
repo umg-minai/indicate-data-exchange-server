@@ -92,7 +92,9 @@ def read_results(session,
     # Collect results that should be returned by skipping period with data from too few providers.
     usable_results = []
     skip_count = 0
-    for period_results in by_indicator_and_period_start.values():
+    for _, period_results in sorted(by_indicator_and_period_start.items(),
+                                    # use period_start as sorting key
+                                    key=lambda item: item[0][1]):
         if data_provider_count_threshold is None or len(period_results) >= data_provider_count_threshold:
             for period_result in period_results:
                 usable_results.append(
